@@ -64,12 +64,14 @@ def write_dataframe_to_s3(channel, s3_client, df: pd.DataFrame, parent_file, pag
     except Exception as e:
         print(e)
         
-def write_markdown_to_s3(channel, s3_client, md, parent_file='test'):    
-    bucket_name = os.getenv("BUCKET_NAME")
-    if bucket_name is None :
+def write_markdown_to_s3(channel, s3_client, md, parent_file):    
+    bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
+    if bucket_name is None or aws_region is None:
         return -1
     try:
         s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/content.md', Body=md)
+        object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/content.md"
+        return object_url
     except Exception as e:
         print(e)    
         
@@ -79,7 +81,19 @@ def write_image_to_s3(channel, s3_client, image_bytes, parent_file, page_num, id
         return -1
     try:
         s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/{page_num}/images/{id}.jpeg', Body=image_bytes)
-        object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{parent_file}/{page_num}/images/{id}.jpeg"
+        object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/{page_num}/images/{id}.jpeg"
         return object_url
     except Exception as e:
-        print(e)  
+        print(e)
+        
+def write_image_to_s3_nopage(channel, s3_client, image_bytes, parent_file):    
+    bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
+    if bucket_name is None or aws_region is None:
+        return -1
+    try:
+        id=uuid4()
+        s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/images/{id}.jpeg', Body=image_bytes)
+        object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/images/{id}.jpeg"
+        return object_url
+    except Exception as e:
+        print(e)   
