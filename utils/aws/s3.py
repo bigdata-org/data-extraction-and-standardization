@@ -58,6 +58,7 @@ def write_dataframe_to_s3(channel, s3_client, df: pd.DataFrame, parent_file, pag
     if bucket_name is None or aws_region is None:
         return -1
     try:
+        parent_file = parent_file.strip('.pdf')
         s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/{page_num}/tables/{id}.csv', Body=csv_buffer.getvalue())
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/{page_num}/tables/{id}.csv"
         return object_url
@@ -69,6 +70,7 @@ def write_markdown_to_s3(channel, s3_client, md, parent_file):
     if bucket_name is None or aws_region is None:
         return -1
     try:
+        parent_file = parent_file.strip('.pdf')
         s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/content.md', Body=md)
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/content.md"
         return object_url
@@ -80,6 +82,7 @@ def write_image_to_s3(channel, s3_client, image_bytes, parent_file, page_num, id
     if bucket_name is None or aws_region is None:
         return -1
     try:
+        parent_file = parent_file.strip('.pdf')
         s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/{page_num}/images/{id}.jpeg', Body=image_bytes)
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/{page_num}/images/{id}.jpeg"
         return object_url
@@ -91,9 +94,11 @@ def write_image_to_s3_nopage(channel, s3_client, image_bytes, parent_file):
     if bucket_name is None or aws_region is None:
         return -1
     try:
+        parent_file = parent_file.strip('.pdf')
         id=uuid4()
         s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/images/{id}.jpeg', Body=image_bytes)
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/images/{id}.jpeg"
         return object_url
     except Exception as e:
-        print(e)   
+        print(e)
+   

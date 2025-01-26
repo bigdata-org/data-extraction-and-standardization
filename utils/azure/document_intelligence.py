@@ -7,7 +7,7 @@ from PIL import Image
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
-from utils.s3 import write_image_to_s3, write_dataframe_to_s3, read_pdf_from_s3
+from utils.aws.s3 import write_image_to_s3, write_dataframe_to_s3, read_pdf_from_s3
 
 def get_doc_int_client():
     endpoint = os.getenv("AZURE_DOC_INT_ENDPOINT")
