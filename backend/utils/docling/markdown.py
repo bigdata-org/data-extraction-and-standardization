@@ -1,9 +1,5 @@
-import sys
-import os
-import json
 import base64
 from pathlib import Path
-import pandas as pd
 from io import BytesIO
 from docling.document_converter import DocumentConverter
 from docling.datamodel.base_models import DocumentStream
@@ -11,7 +7,7 @@ from docling_core.types.doc import ImageRefMode
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, PdfFormatOption
-from utils.aws.s3 import get_s3_client, read_pdf_from_s3, write_image_to_s3, write_image_to_s3_nopage, write_markdown_to_s3
+from utils.aws.s3 import get_s3_client, read_pdf_from_s3, write_image_to_s3_nopage, write_markdown_to_s3
 
 
 def PDF2MD(s3_client, url):
@@ -22,7 +18,7 @@ def PDF2MD(s3_client, url):
     return object_url   
 
 def save_b64_markdown(url, parent_file):
-    pdf_data = read_pdf_from_s3(get_s3_client(), url)
+    pdf_data = read_pdf_from_s3(get_s3_client(), url)[0]
     buf = BytesIO(pdf_data)
     source = DocumentStream(name=parent_file, stream=buf)
     IMAGE_RESOLUTION_SCALE = 2.0
@@ -46,6 +42,7 @@ def save_b64_markdown(url, parent_file):
 def process_markdown(s3_client, local_filepath):
     with open(local_filepath, 'rb') as f:
         _md = f.read().decode('utf-8')  #str object
+    _md = _md.replace("\r\n", "\n").replace("\r", "\n")
     _md_lst = _md.split("\n")
     for i,d in enumerate(_md_lst):
         if '![Image]' in d:

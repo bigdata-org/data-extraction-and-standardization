@@ -47,7 +47,7 @@ def read_markdown_from_s3(s3_client, file_name):
         return -1
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=f'results/docling/{file_name}/content.md')
-        markdown_content = response["Body"].read().decode("utf-8")  # Decode bytes to string
+        markdown_content = response["Body"].read()  # Decode bytes to string .decode("utf-8")
         endpoint = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/docling/{file_name}/content.md"            
         return markdown_content, endpoint
     except ClientError as e:
@@ -102,7 +102,7 @@ def write_markdown_to_s3(channel, s3_client, md, parent_file):
         return -1
     try:
         parent_file = parent_file.strip('.pdf')
-        s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/content.md', Body=md)
+        s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/content.md', Body=md.encode('utf-8'), ContentType='text/markdown')
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/content.md"
         return object_url
     except Exception as e:

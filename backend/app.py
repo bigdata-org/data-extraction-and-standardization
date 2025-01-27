@@ -25,8 +25,8 @@ async def fetch_s3_objects() -> s3MetaData :
 async def fetch_md(id : str) :
     s3_client = get_s3_client()
     res = read_markdown_from_s3(s3_client, id)
-    if len(res)==2:
-        return {'markdown': res[0], 'endpoint' : res[1]}
+    if not isinstance(res,int):
+        return {'markdown': res[0].decode('utf-8'), 'endpoint' : res[1]}
     else:
         raise HTTPException(status_code=404, detail="Object not found")        
     
