@@ -1,7 +1,6 @@
 import os
 import boto3
-import fitz
-from botocore.client import BaseClient
+from botocore.exceptions import ClientError, EndpointConnectionError
 from uuid import uuid4
 from io import BytesIO, StringIO
 import pandas as pd
@@ -16,8 +15,8 @@ def get_s3_client():
     return s3_client
 
 def read_pdf_from_s3(s3_client, url):
-    bucket_name = os.getenv("BUCKET_NAME")
-    if bucket_name is None :
+    bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
+    if bucket_name is None or aws_region is None:
         return -1
     url = url.split('/uploads/')
     if len(url)>1 and url[1].endswith('.pdf'):
@@ -25,21 +24,53 @@ def read_pdf_from_s3(s3_client, url):
         try:
             response = s3_client.get_object(Bucket=bucket_name, Key=f'uploads/{file_name}')
             pdf_bytes =  response["Body"].read()
-            return pdf_bytes
-        except Exception as e:
-            print(e)
+            endpoint = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/uploads/{id}.pdf"            
+            return pdf_bytes, endpoint
+        except ClientError as e:
+            if e.response['Error']['Code'] == "NoSuchKey":
+                print("Error: The specified file does not exist.")
+            else:
+                print(f"ClientError: {e}")
             return -1
+        except EndpointConnectionError as e:
+            print("Error: Could not connect to the S3 endpoint. Check your configuration.")
+            return -2
+        except Exception as e:
+            print(f"Unexpected error occurred: {e}")
+            return -999
     else :
+        return -3
+    
+def read_markdown_from_s3(s3_client, file_name):
+    bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
+    if bucket_name is None or aws_region is None:
         return -1
+    try:
+        response = s3_client.get_object(Bucket=bucket_name, Key=f'results/docling/{file_name}/content.md')
+        markdown_content = response["Body"].read().decode("utf-8")  # Decode bytes to string
+        endpoint = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/docling/{file_name}/content.md"            
+        return markdown_content, endpoint
+    except ClientError as e:
+        if e.response['Error']['Code'] == "NoSuchKey":
+            print("Error: The specified file does not exist.")
+        else:
+            print(f"ClientError: {e}")
+        return -1
+    except EndpointConnectionError as e:
+        print("Error: Could not connect to the S3 endpoint. Check your configuration.")
+        return -2
+    except Exception as e:
+        print(f"Unexpected error occurred: {e}")
+        return -999
     
 def upload_pdf_to_s3(s3_client, file_bytes_io: BytesIO):
     try:
-        # Define S3 file path
-        id = uuid4()
-        s3_file_path = f"uploads/{id}.pdf"
         bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
         if bucket_name is None or aws_region is None:
             return -1
+        # Define S3 file path
+        id = uuid4()
+        s3_file_path = f"uploads/{id}.pdf"
         # Upload the file to S3 using upload_fileobj
         s3_client.upload_fileobj(file_bytes_io, bucket_name, s3_file_path)
 
