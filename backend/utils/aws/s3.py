@@ -101,4 +101,48 @@ def write_image_to_s3_nopage(channel, s3_client, image_bytes, parent_file):
         return object_url
     except Exception as e:
         print(e)
+        
+def list_pdfs_from_s3(s3_client, container_name):
+    """
+    List all PDFs in a specific container (prefix) in the S3 bucket.
+
+    :param s3_client: Boto3 S3 client
+    :param container_name: Name of the container (prefix) to filter objects
+    :return: List of PDF details (file_name, file_size, last_modified)
+    """
+    try:
+        bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
+        if bucket_name is None or aws_region is None:
+            return -1
+        
+        pdf_details = []
+        prefix = f"{container_name}/"  # Set the prefix based on the container name
+
+        # Paginate through the S3 bucket to list objects with the specified prefix
+        paginator = s3_client.get_paginator('list_objects_v2')
+        response_iterator = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
+        
+        for page in response_iterator:
+            if "Contents" in page:
+                for obj in page["Contents"]:
+                    key = obj["Key"]
+                    filename = key.split("/")[-1]
+                    if key.endswith(".pdf"):  # Check if the file is a PDF
+                        size = obj["Size"]
+                        size_kb = round(obj["Size"] / 1024)
+                        last_modified = obj["LastModified"]
+                        # Format the date as a readable string
+                        last_modified_str = last_modified.strftime("%Y-%m-%d %H:%M:%S")
+                        public_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/{key}"
+                        pdf_details.append({
+                            "file_name": filename,
+                            "file_size": size_kb,
+                            "last_modified": last_modified_str,
+                            "endpoint" : public_url
+                        })
+        
+        return pdf_details
+    except Exception as e:
+        print(f"Error listing PDFs: {e}")
+        return []   
    
