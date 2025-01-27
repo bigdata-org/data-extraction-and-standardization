@@ -1,17 +1,5 @@
 # Data Extraction and Standardization
 
-An integrated solution for data processing and visualization using FastAPI and Streamlit.
-
-## Project Overview
-
-/data-extraction-and-standardization
-│
-├── backend
-│ └── app.py # FastAPI backend application
-│
-└── frontend
-└── streamlit-app.py # Streamlit frontend application
-
 ## Quick Start Guide
 
 ### Setup
