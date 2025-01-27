@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Request, Response
-from backend.utils.aws.s3 import get_s3_client, list_pdfs_from_s3
+from utils.aws.s3 import get_s3_client, list_pdfs_from_s3
 from pydantic import BaseModel
 
 app = FastAPI()
