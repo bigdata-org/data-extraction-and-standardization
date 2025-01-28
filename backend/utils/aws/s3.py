@@ -24,8 +24,7 @@ def read_pdf_from_s3(s3_client, url):
         try:
             response = s3_client.get_object(Bucket=bucket_name, Key=f'uploads/{file_name}')
             pdf_bytes =  response["Body"].read()
-            endpoint = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/uploads/{id}.pdf"            
-            return pdf_bytes, endpoint
+            return pdf_bytes
         except ClientError as e:
             if e.response['Error']['Code'] == "NoSuchKey":
                 print("Error: The specified file does not exist.")

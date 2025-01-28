@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Response
 from utils.aws.s3 import *
 from utils.docling.core import PDF2MD as docling_PDF2MD
 from utils.firecrawl.core import get_firecrawl_client,scraper
+from utils.azure.document_intelligence import get_doc_int_client, extracter as docint_extracter
 from utils.helper import is_valid_url, remove_garbage
 from pydantic import BaseModel
 from typing import List
@@ -63,6 +64,15 @@ async def extract_docling_md(request: UrlModel) -> UrlModel:
         endpoint = docling_PDF2MD(s3_client, url)
         return {"url": endpoint}
 
+@app.post('/extract/doc-int')
+async def docint_extract(request: UrlModel):
+    url = request.url
+    if not is_valid_url(url):
+        raise HTTPException(status_code=400, detail="bad request")
+    else:
+        docint_client, s3_client = get_doc_int_client(), get_s3_client()   
+        log = docint_extracter(doc_int_client=docint_client, s3_client=s3_client, url = url)
+        return log
     
 @app.post('/scrape/firecrawl')        
 async def firecrawl_scrape(request: UrlModel) -> MarkdownModel:

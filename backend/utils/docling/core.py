@@ -25,7 +25,7 @@ def PDF2MD(s3_client, url):
 
 def save_b64_markdown(url, parent_file):
     try:
-        pdf_data = read_pdf_from_s3(get_s3_client(), url)[0]
+        pdf_data = read_pdf_from_s3(get_s3_client(), url)
     except:
         return -1
     try:
