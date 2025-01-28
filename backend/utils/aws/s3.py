@@ -76,7 +76,6 @@ def upload_pdf_to_s3(s3_client, file_bytes_io: BytesIO):
 
         # Construct the public URL for the uploaded file
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/{s3_file_path}"
-
         return object_url
     except Exception as e:
         raise e
@@ -160,7 +159,6 @@ def list_pdfs_from_s3(s3_client, container_name):
                     key = obj["Key"]
                     filename = key.split("/")[-1]
                     if key.endswith(".pdf"):  # Check if the file is a PDF
-                        size = obj["Size"]
                         size_kb = round(obj["Size"] / 1024)
                         last_modified = obj["LastModified"]
                         # Format the date as a readable string
@@ -170,7 +168,7 @@ def list_pdfs_from_s3(s3_client, container_name):
                             "file_name": filename,
                             "file_size": size_kb,
                             "last_modified": last_modified_str,
-                            "endpoint" : public_url
+                            "url" : public_url
                         })
         
         return pdf_details
