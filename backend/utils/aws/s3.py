@@ -106,7 +106,8 @@ def write_markdown_to_s3(channel, s3_client, md, parent_file):
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/content.md"
         return object_url
     except Exception as e:
-        print(e)    
+        print(e)
+        return -1    
         
 def write_image_to_s3(channel, s3_client, image_bytes, parent_file, page_num, id):    
     bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
