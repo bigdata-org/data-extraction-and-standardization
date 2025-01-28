@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Response
-from utils.aws.s3 import *
-from utils.docling.core import PDF2MD as docling_PDF2MD
-from utils.firecrawl.core import get_firecrawl_client,scraper
-from utils.azure.document_intelligence import get_doc_int_client, extracter as docint_extracter
-from utils.helper import is_valid_url, remove_garbage
+from backend.utils.aws.s3 import *
+from backend.utils.docling.core import PDF2MD as docling_PDF2MD
+from backend.utils.firecrawl.core import get_firecrawl_client,scraper
+from backend.utils.azure.document_intelligence import get_doc_int_client, extracter as docint_extracter
+from backend.utils.helper import is_valid_url, remove_garbage
 from pydantic import BaseModel
 from typing import List
 import io

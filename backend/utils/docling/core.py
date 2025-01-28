@@ -7,7 +7,7 @@ from docling_core.types.doc import ImageRefMode
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, PdfFormatOption
-from utils.aws.s3 import get_s3_client, read_pdf_from_s3, write_image_to_s3_nopage, write_markdown_to_s3
+from backend.utils.aws.s3 import get_s3_client, read_pdf_from_s3, write_image_to_s3_nopage, write_markdown_to_s3
 
 
 def PDF2MD(s3_client, url):
