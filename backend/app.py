@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Response
 from utils.aws.s3 import *
 from utils.docling.core import PDF2MD as docling_PDF2MD
 from utils.firecrawl.core import get_firecrawl_client,scraper
-from utils.helper import is_valid_url
+from utils.helper import is_valid_url, remove_garbage
 from pydantic import BaseModel
 from typing import List
 import io
@@ -90,6 +90,14 @@ async def firecrawl_scrape(request: UrlModel) -> MarkdownModel:
             return HTTPException(status_code=500, detail="Internel Server Error")
         else:
             return {'markdown': res[0].decode('utf-8'), 'url' : res[1]}
+        
+@app.get('/protected/cleanup')
+async def cleanup(secret: str):
+    if secret=='_101x':
+        remove_garbage()
+        return {"status_code":200, "detail":"OK"}
+    else:
+        raise HTTPException(status_code=400, detail="bad request") 
 
 
 
