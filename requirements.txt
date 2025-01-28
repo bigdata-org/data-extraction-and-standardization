@@ -1,4 +1,4 @@
-azure-ai-documentintelligence==1.0.0
+azure-ai-documentintelligence
 boto3
 docling
 fastapi
