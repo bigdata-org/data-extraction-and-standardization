@@ -1,13 +1,12 @@
 import os
 import fitz
-import json
 import pandas as pd  
 import io
 from PIL import Image
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
-from utils.aws.s3 import write_image_to_s3, write_dataframe_to_s3, read_pdf_from_s3
+from backend.utils.aws.s3 import write_image_to_s3, write_dataframe_to_s3, read_pdf_from_s3
 
 def get_doc_int_client():
     endpoint = os.getenv("AZURE_DOC_INT_ENDPOINT")
@@ -19,7 +18,7 @@ def get_doc_int_client():
 #     return poller_result['content'] if 'content' in poller_result else None
 
 def extracter(doc_int_client, s3_client, url):
-    log=[]
+    log=dict()
     poller = doc_int_client.begin_analyze_document(
     "prebuilt-layout",
     AnalyzeDocumentRequest(url_source=url),
@@ -27,14 +26,14 @@ def extracter(doc_int_client, s3_client, url):
     data = poller.result()  
     #Process Figure
     pdf_raw_data = read_pdf_from_s3(s3_client, url)
-    parent_file = url.split('/uploads/')[1]
+    parent_file = url.split('/uploads/')[1].strip('.pdf')
     if 'figures' in data:
         f_trace = extract_figure(s3_client=s3_client, poller_result=data, parent_file=parent_file, pdf_raw_data = pdf_raw_data)
-        log.extend(f_trace)
+        log["figures"]=f_trace
     
     if 'tables' in data:       
         t_trace = extract_tables(s3_client=s3_client, poller_result=data, parent_file=parent_file)
-        log.extend(t_trace)
+        log["tables"]=t_trace
     return log
 
 def extract_figure(s3_client, poller_result, parent_file, pdf_raw_data):

@@ -24,8 +24,7 @@ def read_pdf_from_s3(s3_client, url):
         try:
             response = s3_client.get_object(Bucket=bucket_name, Key=f'uploads/{file_name}')
             pdf_bytes =  response["Body"].read()
-            endpoint = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/uploads/{id}.pdf"            
-            return pdf_bytes, endpoint
+            return pdf_bytes
         except ClientError as e:
             if e.response['Error']['Code'] == "NoSuchKey":
                 print("Error: The specified file does not exist.")
@@ -76,7 +75,6 @@ def upload_pdf_to_s3(s3_client, file_bytes_io: BytesIO):
 
         # Construct the public URL for the uploaded file
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/{s3_file_path}"
-
         return object_url
     except Exception as e:
         raise e
@@ -106,7 +104,8 @@ def write_markdown_to_s3(channel, s3_client, md, parent_file):
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/content.md"
         return object_url
     except Exception as e:
-        print(e)    
+        print(e)
+        return -1    
         
 def write_image_to_s3(channel, s3_client, image_bytes, parent_file, page_num, id):    
     bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
@@ -159,7 +158,6 @@ def list_pdfs_from_s3(s3_client, container_name):
                     key = obj["Key"]
                     filename = key.split("/")[-1]
                     if key.endswith(".pdf"):  # Check if the file is a PDF
-                        size = obj["Size"]
                         size_kb = round(obj["Size"] / 1024)
                         last_modified = obj["LastModified"]
                         # Format the date as a readable string
@@ -169,7 +167,7 @@ def list_pdfs_from_s3(s3_client, container_name):
                             "file_name": filename,
                             "file_size": size_kb,
                             "last_modified": last_modified_str,
-                            "endpoint" : public_url
+                            "url" : public_url
                         })
         
         return pdf_details
