@@ -3,35 +3,50 @@ from pypdf import PdfReader
 from pypdf import PdfReader
 import hashlib
 from docling.document_converter import DocumentConverter
+from io import BytesIO
+from utils.aws import s3
 
 
-def extract_unique_images_from_pdf(pdf):
-    images_folder = "extracted_images"
-    if not os.path.exists(images_folder):
-        os.makedirs(images_folder)
-
+def extract_unique_images_and_write_to_s3(s3_client,pdf, bucket_name, s3_prefix='pdf_images_extracted/'):
     reader = PdfReader(pdf)
     unique_hashes = set()
+    try:
+        for page_number in range(len(reader.pages)):
+            page = reader.pages[page_number]
+            for count, image_file_object in enumerate(page.images):
+               
+                # Generate hash of image data
+                image_hash = hashlib.md5(image_file_object.data).hexdigest()
+                # Skip if duplicate
+                if image_hash in unique_hashes:
+                    continue
+                # Add hash to unique set
+                unique_hashes.add(image_hash)
+               
+                s3_storage = f"{s3_prefix}page_{page_number + 1}_image_{count + 1}.png"
+                # Upload directly to S3 using BytesIO
+                image_data = BytesIO(image_file_object.data)
+                s3 = s3_client
 
-    for page_number in range(len(reader.pages)):
-        page = reader.pages[page_number]
-        for count, image_file_object in enumerate(page.images):
-            image_hash = hashlib.md5(image_file_object.data).hexdigest()
-            if image_hash in unique_hashes:
-                continue
-            # Add hash to unique set and save image
-            unique_hashes.add(image_hash)
-            temp_image_file_path = os.path.join(images_folder, f"page_{page_number + 1}_image_{count + 1}.png")
-            # //temp_image_file_path = f"temp_{file.filename}"
-            with open(temp_image_file_path, "wb") as img_fp:
-                img_fp.write(image_file_object.data)
-    
-
-    return temp_image_file_path
+                s3.upload_fileobj(
+                    image_data,
+                    bucket_name,
+                    s3_storage
+             )
+        return {
+                "status": "success"
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 def process_pdf_to_markdown(pdf_path, output_dir="pdf_output"):
    
+    bucket_name = os.getenv('BUCKET_NAME')
+    s3_client = s3.get_s3client()
     os.makedirs(output_dir, exist_ok=True)
 
     # Step 1: Convert PDF to intermediate HTML
@@ -56,6 +71,7 @@ def process_pdf_to_markdown(pdf_path, output_dir="pdf_output"):
         # End HTML document
         fp.write("</body>\n</html>\n")
 
+    extract_unique_images_and_write_to_s3(s3_client,pdf_path, bucket_name,"pdf_images_extracted/")
     # Step 2: Convert HTML to Markdown using DocumentConverter
     converter = DocumentConverter()
     result = converter.convert(html_file_path)

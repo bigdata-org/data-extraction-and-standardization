@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
 import os 
 from utils import convert_pdf, docling_conversion
+from utils.aws import s3
+
 
 # Create a FastAPI application
 app = FastAPI(docs_url="/docs")
@@ -28,3 +30,4 @@ async def pdfTOMd_conversion_docling(file: UploadFile = File()):
     md_file_path = docling_conversion.pdf_to_md_docling(input_pdf_path)
     os.remove(input_pdf_path)
     return FileResponse(md_file_path, media_type="text/markdown", filename="doclingConversion.md")
+
