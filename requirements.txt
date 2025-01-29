@@ -1,6 +1,6 @@
+docling
 azure-ai-documentintelligence
 boto3
-docling
 fastapi
 firecrawl
 gunicorn
@@ -11,7 +11,9 @@ pydantic
 python-dotenv
 requests
 streamlit
-urllib3
 uvicorn
 validators
+PyMuPDF
+
+
 
