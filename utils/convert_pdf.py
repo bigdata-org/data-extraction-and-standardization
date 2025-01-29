@@ -1,12 +1,14 @@
 import os
 from pypdf import PdfReader
-from pypdf import PdfReader
 import hashlib
 from docling.document_converter import DocumentConverter
 from io import BytesIO
 from utils.aws import s3
 import uuid
 from datetime import datetime
+import pdfplumber
+import pandas as pd 
+
 
 def extract_unique_images_and_write_to_s3(s3_client,pdf, bucket_name, s3_prefix='pdf_images_extracted/'):
     reader = PdfReader(pdf)
@@ -42,6 +44,20 @@ def extract_unique_images_and_write_to_s3(s3_client,pdf, bucket_name, s3_prefix=
             "status": "error",
             "message": str(e)
         }
+
+def extract_tables_from_pdf(pdf):
+    tables_folder = "extracted_tables" 
+    os.makedirs(tables_folder, exist_ok=True)  # Ensure the folder exists
+ 
+    with pdfplumber.open(pdf) as pdf :
+        for page_number in range(len(pdf.pages)):
+            table=pdf.pages[page_number].extract_table()
+            if table:
+                df = pd.DataFrame(table[1::], columns=table[0])
+                # print(df)
+                csv_path = os.path.join(tables_folder, f"table_page_{page_number}.csv")
+                df.to_csv(csv_path, index= False)
+
 
 
 def process_pdf_to_markdown(pdf_path, output_dir="pdf_output"):
