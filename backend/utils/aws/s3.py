@@ -93,6 +93,7 @@ def write_dataframe_to_s3(channel, s3_client, df: pd.DataFrame, parent_file, pag
         return object_url
     except Exception as e:
         print(e)
+        return -1
         
 def write_markdown_to_s3(channel, s3_client, md, parent_file):    
     bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
@@ -118,6 +119,7 @@ def write_image_to_s3(channel, s3_client, image_bytes, parent_file, page_num, id
         return object_url
     except Exception as e:
         print(e)
+        return -1
         
 def write_image_to_s3_nopage(channel, s3_client, image_bytes, parent_file):    
     bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
