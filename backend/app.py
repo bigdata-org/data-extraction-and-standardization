@@ -41,7 +41,7 @@ async def fetch_docling_md(id : str) -> MarkdownModel:
     s3_client = get_s3_client()
     res = read_markdown_from_s3(s3_client, id)
     if not isinstance(res,int):
-        return {'markdown': res[0].decode('utf-8'), 'url' : res[1]}
+        return {'md': res[0].decode('utf-8'), 'url' : res[1]}
     else:
         raise HTTPException(status_code=404, detail="Object not found")
     
