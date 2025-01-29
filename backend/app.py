@@ -3,7 +3,7 @@ from backend.utils.aws.s3 import *
 from backend.utils.docling.core import PDF2MD as docling_PDF2MD
 from backend.utils.firecrawl.core import get_firecrawl_client,scraper
 from backend.utils.azure.document_intelligence import get_doc_int_client, extracter as docint_extracter
-from backend.utils.helper import is_valid_url, remove_garbage
+from backend.utils.helper import is_valid_url, remove_garbage, parse_endpoints
 from pydantic import BaseModel
 from typing import List
 import io
@@ -24,6 +24,10 @@ class MarkdownModel(BaseModel):
         
 class UrlModel(BaseModel):
     url: str
+
+class CsvImageUrlModel(BaseModel):
+    tables: list
+    images: list
                         
 
 @app.get('/')
@@ -44,6 +48,18 @@ async def fetch_docling_md(id : str) -> MarkdownModel:
         return {'md': res[0].decode('utf-8'), 'url' : res[1]}
     else:
         raise HTTPException(status_code=404, detail="Object not found")
+    
+@app.get('/results/doc-int/{id}')
+async def fetch_doc_int_endpoints(id : str) -> CsvImageUrlModel:
+    s3_client = get_s3_client()
+    res = list_endpoints_from_s3(s3_client, f'results/azure-ai-document-intelligence/{id}')
+    if isinstance(res,int):
+        return HTTPException(status_code=500, detail="Internel Server Error")
+    elif isinstance(res,list) and len(res)==0:
+        raise HTTPException(status_code=404, detail="Object not found")
+    else:
+        parsed_endpoints = parse_endpoints(res)
+        return parsed_endpoints
     
 @app.post('/upload')
 async def upload_pdf(file_bytes_io) -> UrlModel:

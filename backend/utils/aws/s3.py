@@ -135,13 +135,6 @@ def write_image_to_s3_nopage(channel, s3_client, image_bytes, parent_file):
         print(e)
         
 def list_pdfs_from_s3(s3_client, container_name):
-    """
-    List all PDFs in a specific container (prefix) in the S3 bucket.
-
-    :param s3_client: Boto3 S3 client
-    :param container_name: Name of the container (prefix) to filter objects
-    :return: List of PDF details (file_name, file_size, last_modified)
-    """
     try:
         bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
         if bucket_name is None or aws_region is None:
@@ -177,3 +170,33 @@ def list_pdfs_from_s3(s3_client, container_name):
         print(f"Error listing PDFs: {e}")
         return []   
    
+def list_endpoints_from_s3(s3_client, container_name):
+    try:
+        bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
+        if not bucket_name or not aws_region:
+            return -1  # Return -1 if environment variables are missing
+
+        objects = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=container_name)
+        if "Contents" not in objects:
+            return []  # Return empty list if no objects are found
+
+        file_list = []
+        for obj in objects["Contents"]:
+            file_name = obj["Key"]
+            size_kb = round(obj["Size"] / 1024)  # Convert bytes to KB
+            last_modified = obj["LastModified"].strftime("%Y-%m-%d %H:%M:%S")
+
+            public_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/{container_name}/{file_name}"
+
+            file_list.append({
+                "file_name": file_name,
+                "file_size": size_kb,
+                "last_modified": last_modified,
+                "url": public_url
+            })
+
+        return file_list
+
+    except Exception as e:
+        print(f"Error listing objects: {e}")
+        return -1
