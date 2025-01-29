@@ -19,13 +19,9 @@ This is a FastAPI-based web scraper that extracts images, tables, and metadata f
 
 ## Installation
 
-1. Clone this repository:
-   ```sh
-   git clone https://github.com/yourusername/web-scraper-api.git
-   cd web-scraper-api
-   ```
 
-2. Create and activate a virtual environment:
+
+1. Create and activate a virtual environment:
    ```sh
    python -m venv venv
    source venv/bin/activate  # On macOS/Linux
@@ -95,9 +91,5 @@ web-scraper-api/
 
 
 
-## Contributing
-Contributions are welcome! Feel free to fork this repository, create a branch, and submit a pull request.
 
-## License
-This project is licensed under the MIT License.
 
