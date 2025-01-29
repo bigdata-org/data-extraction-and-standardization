@@ -5,7 +5,8 @@ import hashlib
 from docling.document_converter import DocumentConverter
 from io import BytesIO
 from utils.aws import s3
-
+import uuid
+from datetime import datetime
 
 def extract_unique_images_and_write_to_s3(s3_client,pdf, bucket_name, s3_prefix='pdf_images_extracted/'):
     reader = PdfReader(pdf)
@@ -76,10 +77,20 @@ def process_pdf_to_markdown(pdf_path, output_dir="pdf_output"):
     converter = DocumentConverter()
     result = converter.convert(html_file_path)
     markdown_content = result.document.export_to_markdown()
+    markdown_data = BytesIO(markdown_content.encode('utf-8'))
+    s3_storage=f"generated_markdown/{datetime.now()}.md"
 
-    # Step 3: Save Markdown content to file
-    markdown_file_path = os.path.join(output_dir, "data_ex.md")
-    with open(markdown_file_path, "w", encoding="utf-8") as f:
-        f.write(markdown_content)
-
-    return markdown_file_path
+    s3_client.upload_fileobj(
+        markdown_data,
+        bucket_name,
+        s3_storage
+    )
+    
+    presigned_url = s3_client.generate_presigned_url(
+        'get_object',
+        Params= {'Bucket':bucket_name,'Key':s3_storage},
+        ExpiresIn = 3600
+    )
+    # public_md_url = f"https://{bucket_name}.s3.amazonaws.com/{s3_storage}"
+    
+    return presigned_url

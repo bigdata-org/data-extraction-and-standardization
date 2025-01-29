@@ -8,7 +8,7 @@ from utils.aws import s3
 # Create a FastAPI application
 app = FastAPI(docs_url="/docs")
 
-    
+# API for openSource parser     
 @app.post("/pdfToMd-text/")
 async def convert_pdf_to_md(file: UploadFile = File(...)):
     # Save the uploaded file temporarily
@@ -20,8 +20,11 @@ async def convert_pdf_to_md(file: UploadFile = File(...)):
     # Remove the temporary input PDF file
     os.remove(input_pdf_path)
     # Return the Markdown file as a response
-    return FileResponse(markdown_file_path, media_type="text/markdown", filename="OpenSourceConversion.md")
+    return markdown_file_path
+    # return FileResponse(markdown_file_path, media_type="text/markdown", filename="OpenSourceConversion.md")
 
+
+# API for docling
 @app.post("/pdfToMd_docling/")
 async def pdfTOMd_conversion_docling(file: UploadFile = File()):
     input_pdf_path = f"temp_{file.filename}"
