@@ -2,14 +2,30 @@ import streamlit as st
 import requests
 import json
 
-st.title('Welcome to the App!')
+st.title('Welcome to PytractAI')
+st.markdown('---')
+st.subheader('Upload a PDF ')
+
+uploaded_file = st.file_uploader("Choose a file ", label_visibility="hidden")
+submit_btn = st.button("Upload")
+api_url = "http://127.0.0.1:8000"
+upload_object_endpoint = "/upload"
 
 
-# Test code for markdown rendering --works 
-file_name = '649af4f1-a280-43b3-8135-1664e7db178b'
-api_url = f"http://localhost:8000/results/docling/{file_name}"  # Replace with your FastAPI endpoint
+if submit_btn and uploaded_file is not None:
+    if uploaded_file.name.endswith(".pdf"):
+        try:
+            body = {"file":uploaded_file}
+            response = requests.post(api_url+upload_object_endpoint,files=body)
+            if response.status_code == 200 :
+                st.success(f'PDF live @ {response.json()['url']}')
+            else :
+                st.error(response.json()['detail'])
+        except requests.exceptions.RequestException as e :
+            st.error("Error occured")
+    else:
+        st.warning(f"Input Document is not a PDF")
+elif submit_btn and (uploaded_file is None) :
+    st.warning(f"Choose a File to upload")           
 
-response = requests.get(api_url)
-res = response.json()
-st.markdown(res["markdown"])
-
+        

@@ -42,7 +42,7 @@ def save_b64_markdown(url, parent_file):
             }
         )
         conv_res = converter.convert(source)
-        output_dir=Path('artifacts/docling')
+        output_dir=Path('backend/artifacts/docling')
         output_dir.mkdir(parents=True, exist_ok=True)
         parent_file = conv_res.input.file.stem
         md_filepath = output_dir / f"{parent_file}.md"

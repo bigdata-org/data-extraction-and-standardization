@@ -48,7 +48,6 @@ def scrape_images(s3_client, soup, parent_file):
                     trace.append(f'(Error) GET Request Failed : {img_url}')
         return trace
     except Exception as e:
-        print(e)
         return -1
 
 def scrape_tables(s3_client, soup, parent_file):

@@ -6,13 +6,16 @@ from io import BytesIO, StringIO
 import pandas as pd
 
 def get_s3_client():
-    s3_client = boto3.client(
-    's3', 
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"), 
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    region_name=os.getenv("AWS_REGION")  
-    )
-    return s3_client
+    try:
+        s3_client = boto3.client(
+        's3', 
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"), 
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        region_name=os.getenv("AWS_REGION")  
+        )
+        return s3_client
+    except:
+        return -1
 
 def read_pdf_from_s3(s3_client, url):
     bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
@@ -77,7 +80,7 @@ def upload_pdf_to_s3(s3_client, file_bytes_io: BytesIO):
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/{s3_file_path}"
         return object_url
     except Exception as e:
-        raise e
+        return -1
     
 def write_dataframe_to_s3(channel, s3_client, df: pd.DataFrame, parent_file, page_num, id):
     csv_buffer = StringIO()
@@ -197,7 +200,8 @@ def list_endpoints_from_s3(s3_client, container_name):
 
         file_list = []
         for obj in objects["Contents"]:
-            file_name = obj["Key"]
+            key = obj["Key"]
+            file_name = key.split("/")[-1]
             size_kb = round(obj["Size"] / 1024)  # Convert bytes to KB
             last_modified = obj["LastModified"].strftime("%Y-%m-%d %H:%M:%S")
 

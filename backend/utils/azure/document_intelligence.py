@@ -9,10 +9,13 @@ from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 from backend.utils.aws.s3 import write_image_to_s3, write_dataframe_to_s3, read_pdf_from_s3
 
 def get_doc_int_client():
-    endpoint = os.getenv("AZURE_DOC_INT_ENDPOINT")
-    key = os.getenv("AZURE_DOC_INT_KEY")
-    document_intelligence_client = DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
-    return document_intelligence_client
+    try:
+        endpoint = os.getenv("AZURE_DOC_INT_ENDPOINT")
+        key = os.getenv("AZURE_DOC_INT_KEY")
+        document_intelligence_client = DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
+        return document_intelligence_client
+    except:
+        return -1
 
 def extracter(doc_int_client, s3_client, url):
     log={'images':[], 'tables':[]}
