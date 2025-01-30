@@ -64,7 +64,7 @@ def process_markdown(s3_client, local_filepath):
             if '![Image]' in d:
                 base64_string = _md_lst[i].split('![Image](data:')[1].split(',')[1]
                 image_bytes = base64.b64decode(base64_string)
-                object_url = write_image_to_s3_nopage('docling', s3_client, image_bytes, parent_file=local_filepath.stem)
+                object_url = write_image_to_s3_nopage('docling', s3_client, image_bytes, parent_file=local_filepath.stem, id=i+1)
                 _md_lst[i] = f'![Image]({object_url})'
         md = "\n".join(_md_lst)
         return md

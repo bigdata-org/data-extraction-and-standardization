@@ -1,9 +1,11 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Response
 from backend.utils.aws.s3 import *
+from backend.utils.opensource.pdf.core import extracter as oss_exrtacter
+from backend.utils.opensource.web.core import scraper as oss_scraper
 from backend.utils.docling.core import PDF2MD as docling_PDF2MD
-from backend.utils.firecrawl.core import get_firecrawl_client,scraper
+from backend.utils.firecrawl.core import get_firecrawl_client, scraper
 from backend.utils.azure.document_intelligence import get_doc_int_client, extracter as docint_extracter
-from backend.utils.helper import is_valid_url, remove_garbage, parse_endpoints
+from backend.utils.helper import is_valid_url, remove_garbage, parse_endpoints, is_file_size_within_limit
 from pydantic import BaseModel
 from typing import List
 import io
@@ -61,8 +63,23 @@ async def fetch_doc_int_endpoints(id : str) -> CsvImageUrlModel:
         parsed_endpoints = parse_endpoints(res)
         return parsed_endpoints
     
+@app.get('/results/opensource/{id}')
+async def fetch_oss_endpoints(id : str) -> CsvImageUrlModel:
+    s3_client = get_s3_client()
+    res = list_endpoints_from_s3(s3_client, f'results/opensource/{id}')
+    if isinstance(res,int):
+        return HTTPException(status_code=500, detail="Internel Server Error")
+    elif isinstance(res,list) and len(res)==0:
+        raise HTTPException(status_code=404, detail="Object not found")
+    else:
+        parsed_endpoints = parse_endpoints(res)
+        return parsed_endpoints
+
 @app.post('/upload')
 async def upload_pdf(file_bytes_io) -> UrlModel:
+    #validate SIZE
+    if not is_file_size_within_limit(file_bytes_io):
+        raise HTTPException(status_code=400, detail="bad request")
     s3_client = get_s3_client()
     endpoint = upload_pdf_to_s3(s3_client, file_bytes_io)
     if endpoint==-1:
@@ -81,14 +98,24 @@ async def extract_docling_md(request: UrlModel) -> UrlModel:
         return {"url": endpoint}
 
 @app.post('/extract/doc-int')
-async def docint_extract(request: UrlModel):
+async def docint_extract(request: UrlModel) -> CsvImageUrlModel:
     url = request.url
     if not is_valid_url(url):
         raise HTTPException(status_code=400, detail="bad request")
     else:
         docint_client, s3_client = get_doc_int_client(), get_s3_client()   
         log = docint_extracter(doc_int_client=docint_client, s3_client=s3_client, url = url)
-        return log
+        return log #need to figure what the response should be
+    
+@app.post('/extract/opensource')
+async def docint_extract(request: UrlModel) -> CsvImageUrlModel:
+    url = request.url
+    if not is_valid_url(url):
+        raise HTTPException(status_code=400, detail="bad request")
+    else:
+        s3_client = get_s3_client()   
+        log = oss_exrtacter(s3_client, url)
+        return log  #need to figure what the response should be
     
 @app.post('/scrape/firecrawl')        
 async def firecrawl_scrape(request: UrlModel) -> MarkdownModel:
@@ -104,18 +131,18 @@ async def firecrawl_scrape(request: UrlModel) -> MarkdownModel:
             return {'markdown': res[0].decode('utf-8'), 'url' : res[1]}
 
 @app.post('/scrape/bs')        
-async def firecrawl_scrape(request: UrlModel) -> MarkdownModel:
+async def bs_scrape(request: UrlModel):
     url = request.url
     if not is_valid_url(url):
         raise HTTPException(status_code=400, detail="bad request")
     else:
         #must change the next 2 lines of code, for BS implementation
-        s3_client, firecrawl_client = get_s3_client(), get_firecrawl_client()
-        res = scraper(s3_client, firecrawl_client,url)
+        s3_client = get_s3_client()
+        res = oss_scraper(s3_client, url)
         if isinstance(res, int):
             return HTTPException(status_code=500, detail="Internel Server Error")
         else:
-            return {'markdown': res[0].decode('utf-8'), 'url' : res[1]}
+            return res
         
 @app.get('/protected/cleanup')
 async def cleanup(secret: str):

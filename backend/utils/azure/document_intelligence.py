@@ -14,11 +14,8 @@ def get_doc_int_client():
     document_intelligence_client = DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
     return document_intelligence_client
 
-# def extract_texts(poller_result):
-#     return poller_result['content'] if 'content' in poller_result else None
-
 def extracter(doc_int_client, s3_client, url):
-    log=dict()
+    log={'images':[], 'tables':[]}
     poller = doc_int_client.begin_analyze_document(
     "prebuilt-layout",
     AnalyzeDocumentRequest(url_source=url),
@@ -29,7 +26,7 @@ def extracter(doc_int_client, s3_client, url):
     parent_file = url.split('/uploads/')[1].strip('.pdf')
     if 'figures' in data:
         f_trace = extract_figure(s3_client=s3_client, poller_result=data, parent_file=parent_file, pdf_raw_data = pdf_raw_data)
-        log["figures"]=f_trace
+        log["images"]=f_trace
     
     if 'tables' in data:       
         t_trace = extract_tables(s3_client=s3_client, poller_result=data, parent_file=parent_file)
