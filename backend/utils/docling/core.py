@@ -42,7 +42,7 @@ def save_b64_markdown(url, parent_file):
             }
         )
         conv_res = converter.convert(source)
-        output_dir=Path('artifacts/docling')
+        output_dir=Path('backend/artifacts/docling')
         output_dir.mkdir(parents=True, exist_ok=True)
         parent_file = conv_res.input.file.stem
         md_filepath = output_dir / f"{parent_file}.md"
@@ -64,7 +64,7 @@ def process_markdown(s3_client, local_filepath):
             if '![Image]' in d:
                 base64_string = _md_lst[i].split('![Image](data:')[1].split(',')[1]
                 image_bytes = base64.b64decode(base64_string)
-                object_url = write_image_to_s3_nopage('docling', s3_client, image_bytes, parent_file=local_filepath.stem)
+                object_url = write_image_to_s3_nopage('docling', s3_client, image_bytes, parent_file=local_filepath.stem, id=i+1)
                 _md_lst[i] = f'![Image]({object_url})'
         md = "\n".join(_md_lst)
         return md

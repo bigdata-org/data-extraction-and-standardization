@@ -9,16 +9,16 @@ from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 from backend.utils.aws.s3 import write_image_to_s3, write_dataframe_to_s3, read_pdf_from_s3
 
 def get_doc_int_client():
-    endpoint = os.getenv("AZURE_DOC_INT_ENDPOINT")
-    key = os.getenv("AZURE_DOC_INT_KEY")
-    document_intelligence_client = DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
-    return document_intelligence_client
-
-# def extract_texts(poller_result):
-#     return poller_result['content'] if 'content' in poller_result else None
+    try:
+        endpoint = os.getenv("AZURE_DOC_INT_ENDPOINT")
+        key = os.getenv("AZURE_DOC_INT_KEY")
+        document_intelligence_client = DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
+        return document_intelligence_client
+    except:
+        return -1
 
 def extracter(doc_int_client, s3_client, url):
-    log=dict()
+    log={'images':[], 'tables':[]}
     poller = doc_int_client.begin_analyze_document(
     "prebuilt-layout",
     AnalyzeDocumentRequest(url_source=url),
@@ -29,7 +29,7 @@ def extracter(doc_int_client, s3_client, url):
     parent_file = url.split('/uploads/')[1].strip('.pdf')
     if 'figures' in data:
         f_trace = extract_figure(s3_client=s3_client, poller_result=data, parent_file=parent_file, pdf_raw_data = pdf_raw_data)
-        log["figures"]=f_trace
+        log["images"]=f_trace
     
     if 'tables' in data:       
         t_trace = extract_tables(s3_client=s3_client, poller_result=data, parent_file=parent_file)

@@ -6,13 +6,16 @@ from io import BytesIO, StringIO
 import pandas as pd
 
 def get_s3_client():
-    s3_client = boto3.client(
-    's3', 
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"), 
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    region_name=os.getenv("AWS_REGION")  
-    )
-    return s3_client
+    try:
+        s3_client = boto3.client(
+        's3', 
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"), 
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        region_name=os.getenv("AWS_REGION")  
+        )
+        return s3_client
+    except:
+        return -1
 
 def read_pdf_from_s3(s3_client, url):
     bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
@@ -77,7 +80,7 @@ def upload_pdf_to_s3(s3_client, file_bytes_io: BytesIO):
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/{s3_file_path}"
         return object_url
     except Exception as e:
-        raise e
+        return -1
     
 def write_dataframe_to_s3(channel, s3_client, df: pd.DataFrame, parent_file, page_num, id):
     csv_buffer = StringIO()
@@ -87,9 +90,25 @@ def write_dataframe_to_s3(channel, s3_client, df: pd.DataFrame, parent_file, pag
     if bucket_name is None or aws_region is None:
         return -1
     try:
-        parent_file = parent_file.strip('.pdf')
+        parent_file = parent_file.strip('.pdf') if channel not in ['bs', 'firecrawl'] else parent_file
         s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/{page_num}/tables/{id}.csv', Body=csv_buffer.getvalue())
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/{page_num}/tables/{id}.csv"
+        return object_url
+    except Exception as e:
+        print(e)
+        return -1
+    
+def write_dataframe_to_s3_nopage(channel, s3_client, df: pd.DataFrame, parent_file, id):
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+    csv_buffer.seek(0)
+    bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
+    if bucket_name is None or aws_region is None:
+        return -1
+    try:
+        parent_file = parent_file.strip('.pdf') if channel not in ['bs', 'firecrawl'] else parent_file
+        s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/tables/{id}.csv', Body=csv_buffer.getvalue())
+        object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/tables/{id}.csv"
         return object_url
     except Exception as e:
         print(e)
@@ -121,13 +140,12 @@ def write_image_to_s3(channel, s3_client, image_bytes, parent_file, page_num, id
         print(e)
         return -1
         
-def write_image_to_s3_nopage(channel, s3_client, image_bytes, parent_file):    
+def write_image_to_s3_nopage(channel, s3_client, image_bytes, parent_file, id):    
     bucket_name, aws_region = os.getenv("BUCKET_NAME"), os.getenv('AWS_REGION')
     if bucket_name is None or aws_region is None:
         return -1
     try:
         parent_file = parent_file.strip('.pdf')
-        id=uuid4()
         s3_client.put_object(Bucket=bucket_name, Key=f'results/{channel}/{parent_file}/images/{id}.jpeg', Body=image_bytes)
         object_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/results/{channel}/{parent_file}/images/{id}.jpeg"
         return object_url
@@ -182,7 +200,8 @@ def list_endpoints_from_s3(s3_client, container_name):
 
         file_list = []
         for obj in objects["Contents"]:
-            file_name = obj["Key"]
+            key = obj["Key"]
+            file_name = key.split("/")[-1]
             size_kb = round(obj["Size"] / 1024)  # Convert bytes to KB
             last_modified = obj["LastModified"].strftime("%Y-%m-%d %H:%M:%S")
 

@@ -14,6 +14,8 @@ streamlit
 uvicorn
 validators
 PyMuPDF
+pypdf
+beautifulsoup4
 
 
 
