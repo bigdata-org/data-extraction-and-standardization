@@ -7,8 +7,8 @@ cd data-extraction-and-standardization
 
 ## 2️⃣ Configure Python Environment
 python -m venv .venv
-For Unix/macOS: source .venv/bin/activate
 
+For Unix/macOS: source .venv/bin/activate
 For Windows: .venv\Scripts\activate
 
 ## 3️⃣ Install Dependencies
