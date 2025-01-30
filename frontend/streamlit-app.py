@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import json
 
-st.title('Welcome to PytractAI')
+st.title('Welcome to Pytract-UI')
 st.markdown('---')
 st.subheader('Upload a PDF ')
 

@@ -28,8 +28,9 @@ class UrlModel(BaseModel):
     url: str
 
 class CsvImageUrlModel(BaseModel):
-    tables: list
     images: list
+    tables: list
+
 
 class CsvImageUrlMdModel(BaseModel):
     tables: list

@@ -63,6 +63,7 @@ def scrape_tables(s3_client, soup, parent_file):
             trace.append(f'(Error) Cannot process : {str(table)}')
     return trace
 
+
 def web2md(soup, digest):
     text = str(soup).encode('utf-8')
     bytes_io = BytesIO(text)

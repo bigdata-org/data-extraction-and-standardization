@@ -22,9 +22,7 @@ def parse_endpoints(lst, mode=0):
                 res['images'].append(data)
     return res
                 
-               
-        
-
+            
 def is_file_size_within_limit(file_bytes, max_size_mb: int = 5) -> bool:
     max_size_bytes = max_size_mb * 1024 * 1024  # Convert MB to bytes
     file_size = len(file_bytes)  # Get the size of the file
