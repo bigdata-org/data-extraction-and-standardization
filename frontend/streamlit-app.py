@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-import json
+import pandas as pd 
 
 st.title('Welcome to the App!')
 
@@ -39,14 +39,32 @@ if api_url is not None and uploaded_file is not None:
     try:
         response = requests.post(api_url,files={"file":uploaded_file})
         if response.status_code == 200 :
-            md_link = response.content.decode("utf-8").strip('"')
+           
+            # md_link = response.
+            response_data = response.json()
+            md_link = response_data.get("presigned_url")
+            images_link = response_data.get("image_urls")
+            tables_urls = response_data.get("table_url")
+
             # getting data from s3 link
             markdown_response = requests.get(md_link)
 
-            if markdown_response.status_code == 200:
-                md_data = markdown_response.text
-                st.markdown(md_data,unsafe_allow_html=True)
-                st.write("success")
+            if md_link:
+                if markdown_response.status_code == 200:
+                    md_data = markdown_response.text
+                    st.markdown(md_data,unsafe_allow_html=True)
+                else :
+                    st.error("error: markdown")
+            if images_link:
+                for img in images_link:
+                    st.image(img)
+            if tables_urls:
+                for table in tables_urls:
+                  table_response = requests.get(table)
+                  print(table_response)
+                  df= pd.read_csv(table)
+                  st.dataframe(df)
+            
         else :
             st.error(f"Failed to process {requests.status_codes}")
     except requests.exceptions.RequestException as e :

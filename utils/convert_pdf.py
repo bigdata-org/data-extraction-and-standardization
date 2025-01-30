@@ -4,16 +4,18 @@ import hashlib
 from docling.document_converter import DocumentConverter
 from io import BytesIO, StringIO
 from utils.aws import s3
-import uuid
+from uuid import uuid4 
 from datetime import datetime
 import pdfplumber
 import pandas as pd 
 
 
 
-def extract_unique_images_and_write_to_s3(s3_client,pdf, bucket_name, s3_prefix='pdf_images_extracted/'):
+def extract_unique_images_and_write_to_s3(s3_client,pdf, bucket_name, s3_region, s3_prefix='pdf_images_extracted/'):
     reader = PdfReader(pdf)
     unique_hashes = set()
+    img_urls = []
+    # id = uuid4()
     try:
         for page_number in range(len(reader.pages)):
             page = reader.pages[page_number]
@@ -27,7 +29,7 @@ def extract_unique_images_and_write_to_s3(s3_client,pdf, bucket_name, s3_prefix=
                 # Add hash to unique set
                 unique_hashes.add(image_hash)
                
-                s3_storage = f"{s3_prefix}page_{page_number + 1}_image_{count + 1}.png"
+                s3_key = f"{s3_prefix}image_{page_number + 1}_{count + 1}.png"
                 # Upload directly to S3 using BytesIO
                 image_data = BytesIO(image_file_object.data)
                 s3 = s3_client
@@ -35,24 +37,24 @@ def extract_unique_images_and_write_to_s3(s3_client,pdf, bucket_name, s3_prefix=
                 s3.upload_fileobj(
                     image_data,
                     bucket_name,
-                    s3_storage
-             )
-        return {
-                "status": "success"
-            }
+                    s3_key
+                )
+                sr_url = f"https://{bucket_name}.s3.{s3_region}.amazonaws.com/{s3_key}"
+                img_urls.append(sr_url)
     except Exception as e:
         return {
             "status": "error",
             "message": str(e)
         }
+    return img_urls
 
 
-def extract_tables_from_pdf(pdf_path,s3, bucket_name):
+def extract_tables_from_pdf(pdf_path,s3, bucket_name, s3_region):
     # Ensure the output folder exists
     # os.makedirs(tables_folder, exist_ok=True)
     # bucket_name = os.getenv('BUCKET_NAME')
     bucket_name = bucket_name
-    result = []
+    table_url =[]
     # Open the PDF file
     with pdfplumber.open(pdf_path) as pdf:
         try:
@@ -78,17 +80,20 @@ def extract_tables_from_pdf(pdf_path,s3, bucket_name):
                         Key=s3_key,
                         Body=csv_buffer.getvalue()
                         )
-                    result.append(f"Files successfully uploaded")
+                        s3_url =  f"https://{bucket_name}.s3.{s3_region}.amazonaws.com/{s3_key}"
+                        table_url.append(s3_url)
+            
         except Exception as e :
-            result.append(f"Error occured:{str(e)}")
+           {str(e)}
 
-    return result
+    return table_url
 
 
 def process_pdf_to_markdown(pdf_path):
    
     bucket_name = os.getenv('BUCKET_NAME')
     s3_client = s3.get_s3client()
+    s3_region = os.getenv('REGION')
     output_dir="temp_pdf_output"
     os.makedirs(output_dir, exist_ok=True)
 
@@ -114,27 +119,31 @@ def process_pdf_to_markdown(pdf_path):
         # End HTML document
         fp.write("</body>\n</html>\n")
 
-    extract_unique_images_and_write_to_s3(s3_client,pdf_path, bucket_name,"pdf_images_extracted/")
-    extract_tables_from_pdf(pdf_path, s3_client, bucket_name)
+    image_urls = extract_unique_images_and_write_to_s3(s3_client,pdf_path, bucket_name,s3_region,"pdf_images_extracted/")
+    table_urls = extract_tables_from_pdf(pdf_path, s3_client, bucket_name,s3_region)
     # Step 2: Convert HTML to Markdown using DocumentConverter
     converter = DocumentConverter()
     result = converter.convert(html_file_path)
     markdown_content = result.document.export_to_markdown()
     markdown_data = BytesIO(markdown_content.encode('utf-8'))
-    s3_storage=f"generated_markdown/{datetime.now()}.md"
-    
+    s3_key=f"generated_markdown/{datetime.now()}.md"
+    os.remove(html_file_path)
+   
     s3_client.upload_fileobj(
         markdown_data,
         bucket_name,
-        s3_storage
+        s3_key
     )
     
     presigned_url = s3_client.generate_presigned_url(
         'get_object',
-        Params= {'Bucket':bucket_name,'Key':s3_storage},
+        Params= {'Bucket':bucket_name,'Key':s3_key},
         ExpiresIn = 3600
     )
     # public_md_url = f"https://{bucket_name}.s3.amazonaws.com/{s3_storage}"
-    os.remove(html_file_path)
     
-    return presigned_url
+    return {
+            "presigned_url" : presigned_url,
+            "table_url": table_urls,
+            "image_urls": image_urls
+        }
