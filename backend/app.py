@@ -103,7 +103,7 @@ async def fetch_oss_endpoints(id : str) -> CsvImageUrlModel:
         elif isinstance(res, list) and len(res) == 0:
             raise handle_object_not_found()
         else:
-            parsed_endpoints = parse_endpoints(res)
+            parsed_endpoints = parse_endpoints(res, mode=1)
             return parsed_endpoints
     except HTTPException as e:
         raise e
