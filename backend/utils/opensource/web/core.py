@@ -8,7 +8,7 @@ import pandas as pd
 import hashlib
 import json
 from io import StringIO
-from backend.utils.aws.s3 import write_image_to_s3_nopage, write_dataframe_to_s3_nopage
+from utils.aws.s3 import write_image_to_s3_nopage, write_dataframe_to_s3_nopage
 from docling.backend.html_backend import HTMLDocumentBackend
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.document import InputDocument

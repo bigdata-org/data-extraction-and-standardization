@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import pandas as pd
-import hashlib
 
 st.title('Pytract-PDF Analyzer')
 st.markdown('---')

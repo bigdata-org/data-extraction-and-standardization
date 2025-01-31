@@ -3,19 +3,18 @@ azure-ai-documentintelligence
 boto3
 fastapi
 firecrawl
-gunicorn
 pandas
 pathlib
 pillow
 pydantic
 python-dotenv
 requests
-streamlit
 uvicorn
 validators
 PyMuPDF
 pypdf
 beautifulsoup4
+pdfplumber
 
 
 
