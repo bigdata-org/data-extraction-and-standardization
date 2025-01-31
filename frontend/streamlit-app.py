@@ -8,7 +8,7 @@ st.subheader('Upload a PDF ')
 
 uploaded_file = st.file_uploader("Choose a file ", label_visibility="hidden")
 submit_btn = st.button("Upload")
-api_url = "http://127.0.0.1:8000"
+api_url = "http://52.4.147.70:8000"
 upload_object_endpoint = "/upload"
 
 
