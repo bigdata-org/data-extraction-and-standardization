@@ -5,7 +5,7 @@ from utils.helper import get_local_ip
 st.title('Pytract-PDF Core')
 st.markdown('---')
 st.subheader("Existing PDFs")  
-api_url = "http://127.0.0.1:8000"
+api_url = "http://18.214.72.166:8000"
 list_object_endpoint = "/objects"
 extract_docint_endpoint = "/extract/doc-int"
 extract_oss_endpoint = "/extract/opensource"

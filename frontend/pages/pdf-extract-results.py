@@ -6,7 +6,7 @@ st.title('Pytract-PDF Analyzer')
 st.markdown('---')
 
 st.subheader("Existing PDFs")  
-api_url = "http://127.0.0.1:8000"
+api_url = "http://18.214.72.166:8000"
 list_object_endpoint = "/objects"
 results_docint_endpoint = "/results/doc-int"
 results_oss_endpoint = "/results/opensource"

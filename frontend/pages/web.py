@@ -5,7 +5,7 @@ from utils.helper import prettify_on
 
 st.title('Pytract-WEB Core')
 st.markdown('---')
-api_url = "http://127.0.0.1:8000"
+api_url = "http://18.214.72.166:8000"
 scrape_firecrawl_endpoint = "/scrape/firecrawl"
 scrape_bs_endpoint = "/scrape/bs"
 
