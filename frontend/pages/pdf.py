@@ -5,7 +5,7 @@ from utils.helper import get_local_ip
 st.title('Pytract-PDF Core')
 st.markdown('---')
 st.subheader("Existing PDFs")  
-api_url = "http://18.214.72.166:8000"
+api_url = "http://127.0.0.1:8000"
 list_object_endpoint = "/objects"
 extract_docint_endpoint = "/extract/doc-int"
 extract_oss_endpoint = "/extract/opensource"
@@ -51,12 +51,12 @@ else:
             endpoint = extract_oss_endpoint if tool_option == "Open Source (PyPDF, pdfplumber)" else extract_docint_endpoint        
             response = requests.post(api_url+endpoint, json=body)
             if response.status_code==200:
-                st.success(f'Images and Tables Extracted Sucessfully, visit http://{get_local_ip()}:8501/pdf-extract-results for extraction results')
+                st.success(f"Images and Tables Extracted Sucessfully, visit http://{get_local_ip()}:8501/pdf-extract-results for extraction results")
             else:
                 st.error("Processing Failed")
             md_response = requests.post(api_url+extract_docling_endpoint, json=body)
             if response.status_code==200:
-                st.success(f'Standardized Markdown live @ {md_response.json()['url']}')
+                st.success(f"Standardized Markdown live @ {md_response.json()['url']}")
             else:
                 st.error("Processing Failed")
         elif selected_rows.shape[0]==0:

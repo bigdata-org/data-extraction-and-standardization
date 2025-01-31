@@ -1,27 +1,22 @@
-# Use the official Python 3.12 image as the base image
-FROM python:3.12-slim
+# Use an ARM-compatible Python 3.12 image
+FROM --platform=linux/arm64 python:3.12-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 
 
-# Install system dependencies
-
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the requirements file into the container
+# Copy and install dependencies
 COPY requirements.txt /app/
-
-# Install Python dependencies 
 RUN pip install -r requirements.txt
-    
 
-# Copy the application code into the container
+# Copy application code
 COPY . /app/
 
-# Expose the port for FastAPI
+# Expose FastAPI port
 EXPOSE 8000
 
-# Command to run the FastAPI application
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port 8000 "]
+# Run FastAPI
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
