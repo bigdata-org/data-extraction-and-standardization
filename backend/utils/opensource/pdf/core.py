@@ -4,7 +4,7 @@ import pdfplumber
 import pandas as pd
 from docling.document_converter import DocumentConverter
 from io import BytesIO, StringIO
-from backend.utils.aws.s3 import read_pdf_from_s3, write_image_to_s3, write_dataframe_to_s3
+from utils.aws.s3 import read_pdf_from_s3, write_image_to_s3, write_dataframe_to_s3
 
 
 def extracter(s3_client, url):

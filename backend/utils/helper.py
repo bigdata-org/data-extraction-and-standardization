@@ -34,7 +34,7 @@ def is_file_size_within_limit(file_bytes, max_size_mb: int = 5) -> bool:
             
 
 def remove_garbage():
-    output_dir=Path('backend/artifacts/docling')
+    output_dir=Path('artifacts/docling')
     if output_dir.exists():
         shutil.rmtree(output_dir)
         

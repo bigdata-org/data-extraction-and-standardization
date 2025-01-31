@@ -3,8 +3,7 @@ FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    FASTAPI_PORT=8000
+    PYTHONDONTWRITEBYTECODE=1 
 
 # Install system dependencies
 
@@ -22,7 +21,7 @@ RUN pip install -r requirements.txt
 COPY . /app/
 
 # Expose the port for FastAPI
-EXPOSE ${FASTAPI_PORT}
+EXPOSE 8000
 
 # Command to run the FastAPI application
-CMD ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port ${FASTAPI_PORT} "]
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port 8000 "]

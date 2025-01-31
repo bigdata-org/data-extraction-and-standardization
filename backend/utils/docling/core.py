@@ -7,7 +7,7 @@ from docling_core.types.doc import ImageRefMode
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, PdfFormatOption
-from backend.utils.aws.s3 import get_s3_client, read_pdf_from_s3, write_image_to_s3_nopage, write_markdown_to_s3
+from utils.aws.s3 import get_s3_client, read_pdf_from_s3, write_image_to_s3_nopage, write_markdown_to_s3
 
 
 def PDF2MD(s3_client, url):
@@ -42,7 +42,7 @@ def save_b64_markdown(url, parent_file):
             }
         )
         conv_res = converter.convert(source)
-        output_dir=Path('backend/artifacts/docling')
+        output_dir=Path('artifacts/docling')
         output_dir.mkdir(parents=True, exist_ok=True)
         parent_file = conv_res.input.file.stem
         md_filepath = output_dir / f"{parent_file}.md"

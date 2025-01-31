@@ -1,5 +1,5 @@
 from firecrawl import FirecrawlApp
-from backend.utils.aws.s3 import write_markdown_to_s3
+from utils.aws.s3 import write_markdown_to_s3
 import hashlib
 
 def get_firecrawl_client():
