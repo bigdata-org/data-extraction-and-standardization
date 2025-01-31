@@ -15,6 +15,7 @@ PyMuPDF
 pypdf
 beautifulsoup4
 pdfplumber
+python-multipart
 
 
 
