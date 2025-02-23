@@ -5,7 +5,7 @@ from utils.helper import get_local_ip
 st.title('Pytract-PDF Core')
 st.markdown('---')
 st.subheader("Existing PDFs")  
-api_url = "http://52.4.147.70:8000"
+api_url = "https://fastapi-service-741843712518.us-central1.run.app/docs"
 list_object_endpoint = "/objects"
 extract_docint_endpoint = "/extract/doc-int"
 extract_oss_endpoint = "/extract/opensource"

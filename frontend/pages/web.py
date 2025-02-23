@@ -5,7 +5,7 @@ from utils.helper import prettify_on
 
 st.title('Pytract-WEB Core')
 st.markdown('---')
-api_url = "http://52.4.147.70:8000"
+api_url = "https://fastapi-service-741843712518.us-central1.run.app/docs"
 scrape_firecrawl_endpoint = "/scrape/firecrawl"
 scrape_bs_endpoint = "/scrape/bs"
 

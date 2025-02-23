@@ -1,22 +1,23 @@
-# Use an ARM-compatible Python 3.12 image
-FROM --platform=linux/arm64 python:3.12-slim
+# Use the official Python 3.10-slim image
+FROM  python:3.12-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8080
 
-# Set the working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy and install dependencies
+# Copy and install dependencies separately to leverage Docker cache
 COPY requirements.txt /app/
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy the rest of the application code
 COPY . /app/
 
-# Expose FastAPI port
-EXPOSE 8000
+# Expose the port
+EXPOSE ${PORT}
 
-# Run FastAPI
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use shell form so that ${PORT} is expanded when the container starts
+CMD sh -c "python -m uvicorn app:app --host 0.0.0.0 --port ${PORT}"

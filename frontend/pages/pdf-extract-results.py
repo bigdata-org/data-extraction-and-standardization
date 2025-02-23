@@ -6,7 +6,7 @@ st.title('Pytract-PDF Analyzer')
 st.markdown('---')
 
 st.subheader("Existing PDFs")  
-api_url = "http://52.4.147.70:8000"
+api_url = "https://fastapi-service-741843712518.us-central1.run.app/docs"
 list_object_endpoint = "/objects"
 results_docint_endpoint = "/results/doc-int"
 results_oss_endpoint = "/results/opensource"
