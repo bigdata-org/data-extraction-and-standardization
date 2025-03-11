@@ -86,7 +86,8 @@ def rag(document_store, model, query):
     result = rag_pipeline.run(data={"prompt_builder": {"query":query}, "text_embedder": {"text": query}})
     prompt = result['prompt_builder']['prompt'][0]._content[0].text
     response = llm(model,prompt)
-    return response['markdown'] if 'markdown' in response else 'Something went wrong, no markdown key in response'
+    # return response['markdown'] if 'markdown' in response else 'Something went wrong, no markdown key in response'
+    return response
 
 def generate_summary(s3_client, model, url):
     file_name = url.split('uploads/')[1].strip('.pdf')
@@ -120,14 +121,15 @@ def generate_summary(s3_client, model, url):
     result = prompt_builder.run(text=markdown_content)
     prompt = result['prompt'][0]._content[0].text
     response = llm(model, prompt)
-    return response.get('markdown','Something went wrong, no markdown key in response')
+    # return response.get('markdown','Something went wrong, no markdown key in response')
+    return response
 
 def qa(s3_client, url, prompt, model="gemini/gemini-1.5-pro",):
     document_store = index(s3_client, url)
     if isinstance(document_store, int):
         return 'Failure occured while indexing the pdf'
-    answer = rag(document_store=document_store, model=model, query=prompt)
-    return answer
+    response = rag(document_store=document_store, model=model, query=prompt)
+    return response
 
 def summarize(s3_client, url, model="gemini/gemini-1.5-pro",):
     summary = generate_summary(s3_client, model, url )

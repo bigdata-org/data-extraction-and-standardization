@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from typing import List
 from io import BytesIO
 from  dotenv import load_dotenv
+import redis
 
 load_dotenv()
 app = FastAPI()
@@ -45,7 +46,14 @@ class TextSummaryModel(BaseModel):
 class qaModel(BaseModel):
     url: str
     model: str
-    prompt: str                      
+    prompt: str    
+    
+# Redis Client for Database 0
+redis_client_db0 = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+
+# Redis Client for Database 1
+redis_client_db1 = redis.StrictRedis(host='localhost', port=6379, db=1, decode_responses=True)
+                  
 
 @app.get('/')
 async def welcome():
@@ -241,7 +249,12 @@ async def text_summarization(request: TextSummaryModel) :
             raise handle_invalid_model()
         s3_client = get_s3_client()
         response = summarize(s3_client, url, model) if model else summarize(s3_client, url)
-        return {"markdown": response}
+        log = response.copy()  
+        log.pop('markdown', None)
+        log_id = log.get('id')  
+        if log_id:  # Check if the 'id' is available
+            redis_client_db0.set(log_id, str(log))
+        return {"markdown": response['markdown']}
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -262,7 +275,13 @@ async def qa_pipeline(request: qaModel):
             raise handle_invalid_prompt()
         s3_client = get_s3_client()
         response = qa(s3_client, url, prompt, model) if model else qa(s3_client, url, prompt)
-        return {"markdown": response}
+                # Create a log dictionary (clone the response and remove markdown)
+        log = response.copy()  
+        log.pop('markdown', None)
+        log_id = log.get('id')  
+        if log_id:  # Check if the 'id' is available
+            redis_client_db1.set(log_id, str(log))
+        return {"markdown": response['markdown']}
     except HTTPException as e:
         raise e
     except Exception:
@@ -283,4 +302,23 @@ async def cleanup(secret: str):
         raise handle_internal_server_error()
 
 
+@app.get("/get_all_db0")
+async def get_all_keys_db0():
+    try:
+        keys = redis_client_db0.keys('*')  # Get all keys in DB 0
+        if not keys:
+            return {"message": "No keys found in DB 0."}
+        return {"keys": keys}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/get_all_db1")
+async def get_all_keys_db1():
+    try:
+        keys = redis_client_db1.keys('*')  # Get all keys in DB 1
+        if not keys:
+            return {"message": "No keys found in DB 1."}
+        return {"keys": keys}
+    except Exception as e:
+        return {"error": str(e)}
 
