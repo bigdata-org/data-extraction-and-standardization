@@ -5,6 +5,7 @@ from utils.opensource.web.core import scraper as oss_scraper
 from utils.docling.core import PDF2MD as docling_PDF2MD
 from utils.firecrawl.core import get_firecrawl_client, scraper
 from utils.azure.document_intelligence import get_doc_int_client, extracter as docint_extracter
+from utils.haystack.pipeline import summarize, qa
 from utils.helper import *
 from pydantic import BaseModel
 from typing import List
@@ -36,7 +37,15 @@ class CsvImageUrlMdModel(BaseModel):
     tables: list
     images: list
     md : str
-                        
+    
+class TextSummaryModel(BaseModel):
+    url: str
+    model: str
+
+class qaModel(BaseModel):
+    url: str
+    model: str
+    prompt: str                      
 
 @app.get('/')
 async def welcome():
@@ -220,6 +229,45 @@ async def bs_scrape(request: UrlModel) -> CsvImageUrlMdModel:
         raise e
     except Exception:
         raise handle_internal_server_error()
+
+@app.post('/text-summarize') 
+async def text_summarization(request: TextSummaryModel) :
+    try:
+        url = request.url
+        model = request.model
+        if not is_valid_url(url):
+            raise handle_invalid_url()
+        if invalid_model(model):
+            raise handle_invalid_model()
+        s3_client = get_s3_client()
+        response = summarize(s3_client, url, model) if model else summarize(s3_client, url)
+        return {"markdown": response}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        # raise handle_internal_server_error()
+        raise e
+    
+@app.post('/qa') 
+async def qa_pipeline(request: qaModel):
+    try:
+        url = request.url
+        model = request.model
+        prompt = request.prompt
+        if not is_valid_url(url):
+            raise handle_invalid_url()
+        if invalid_model(model):
+            raise handle_invalid_model()
+        if invalid_prompt(prompt):
+            raise handle_invalid_prompt()
+        s3_client = get_s3_client()
+        response = qa(s3_client, url, prompt, model) if model else qa(s3_client, url, prompt)
+        return {"markdown": response}
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise handle_internal_server_error()
+
         
 @app.get('/protected/cleanup')
 async def cleanup(secret: str):

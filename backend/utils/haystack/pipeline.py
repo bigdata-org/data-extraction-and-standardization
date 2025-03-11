@@ -1,5 +1,5 @@
-from backend.utils.aws.s3 import read_markdown_from_s3
-from backend.utils.litellm.core import llm
+from utils.aws.s3 import read_markdown_from_s3
+from utils.litellm.core import llm
 from haystack import Pipeline
 from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack.components.retrievers import InMemoryEmbeddingRetriever
@@ -14,31 +14,34 @@ from haystack.components.converters import MarkdownToDocument
 from haystack.dataclasses.byte_stream import ByteStream
 
 def index(s3_client, url):
-    file_name = url.split('uploads/')[1].strip('.pdf')
-    markdown_bytes = read_markdown_from_s3(s3_client, file_name)[0]
-    markdown_stream = ByteStream(data=markdown_bytes, mime_type="text/markdown")
-    
-    document_store = InMemoryDocumentStore()
-    converter = MarkdownToDocument()
-    cleaner = DocumentCleaner()
-    splitter = DocumentSplitter()
-    embedder = OpenAIDocumentEmbedder()
-    writer = DocumentWriter(document_store)
-    
-    indexing_pipeline = Pipeline()
-    indexing_pipeline.add_component("converter", converter)
-    indexing_pipeline.add_component("cleaner", cleaner)
-    indexing_pipeline.add_component("splitter", splitter)
-    indexing_pipeline.add_component("embedder", embedder)
-    indexing_pipeline.add_component("writer", writer)
-    
-    indexing_pipeline.connect("converter.documents", "cleaner.documents")
-    indexing_pipeline.connect("cleaner.documents", "splitter.documents")
-    indexing_pipeline.connect("splitter.documents", "embedder.documents")
-    indexing_pipeline.connect("embedder.documents", "writer.documents")
-    indexing_pipeline.run(data={"sources": [markdown_stream]})
-    
-    return document_store
+    try:
+        file_name = url.split('uploads/')[1].strip('.pdf')
+        markdown_bytes = read_markdown_from_s3(s3_client, file_name)[0]
+        markdown_stream = ByteStream(data=markdown_bytes, mime_type="text/markdown")
+        
+        document_store = InMemoryDocumentStore()
+        converter = MarkdownToDocument()
+        cleaner = DocumentCleaner()
+        splitter = DocumentSplitter()
+        embedder = OpenAIDocumentEmbedder()
+        writer = DocumentWriter(document_store)
+        
+        indexing_pipeline = Pipeline()
+        indexing_pipeline.add_component("converter", converter)
+        indexing_pipeline.add_component("cleaner", cleaner)
+        indexing_pipeline.add_component("splitter", splitter)
+        indexing_pipeline.add_component("embedder", embedder)
+        indexing_pipeline.add_component("writer", writer)
+        
+        indexing_pipeline.connect("converter.documents", "cleaner.documents")
+        indexing_pipeline.connect("cleaner.documents", "splitter.documents")
+        indexing_pipeline.connect("splitter.documents", "embedder.documents")
+        indexing_pipeline.connect("embedder.documents", "writer.documents")
+        indexing_pipeline.run(data={"sources": [markdown_stream]})
+        
+        return document_store
+    except:
+        return -1
 
 def rag(document_store, model, query):
     text_embedder = OpenAITextEmbedder()
@@ -89,7 +92,6 @@ def generate_summary(s3_client, model, url):
     file_name = url.split('uploads/')[1].strip('.pdf')
     try:
         markdown_data = read_markdown_from_s3(s3_client, file_name)
-        print(markdown_data)
         markdown_content = markdown_data[0].decode('utf-8')
     except (UnicodeDecodeError, IndexError, AttributeError, Exception) as e:
         raise Exception("File Not Found") from e
@@ -122,6 +124,8 @@ def generate_summary(s3_client, model, url):
 
 def qa(s3_client, url, prompt, model="gemini/gemini-1.5-pro",):
     document_store = index(s3_client, url)
+    if isinstance(document_store, int):
+        return 'Failure occured while indexing the pdf'
     answer = rag(document_store=document_store, model=model, query=prompt)
     return answer
 
