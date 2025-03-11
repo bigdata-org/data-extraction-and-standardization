@@ -16,6 +16,13 @@ pypdf
 beautifulsoup4
 pdfplumber
 python-multipart
+haystack-ai
+markdown-it-py 
+mdit_plain
+boto3
+pandas
+litellm
+
 
 
 
