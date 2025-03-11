@@ -5,11 +5,13 @@ from utils.opensource.web.core import scraper as oss_scraper
 from utils.docling.core import PDF2MD as docling_PDF2MD
 from utils.firecrawl.core import get_firecrawl_client, scraper
 from utils.azure.document_intelligence import get_doc_int_client, extracter as docint_extracter
+from utils.haystack.pipeline import summarize, qa
 from utils.helper import *
 from pydantic import BaseModel
 from typing import List
 from io import BytesIO
 from  dotenv import load_dotenv
+import redis
 
 load_dotenv()
 app = FastAPI()
@@ -36,7 +38,22 @@ class CsvImageUrlMdModel(BaseModel):
     tables: list
     images: list
     md : str
-                        
+    
+class TextSummaryModel(BaseModel):
+    url: str
+    model: str
+
+class qaModel(BaseModel):
+    url: str
+    model: str
+    prompt: str    
+    
+# Redis Client for Database 0
+redis_client_db0 = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+
+# Redis Client for Database 1
+redis_client_db1 = redis.StrictRedis(host='localhost', port=6379, db=1, decode_responses=True)
+                  
 
 @app.get('/')
 async def welcome():
@@ -220,6 +237,56 @@ async def bs_scrape(request: UrlModel) -> CsvImageUrlMdModel:
         raise e
     except Exception:
         raise handle_internal_server_error()
+
+@app.post('/text-summarize') 
+async def text_summarization(request: TextSummaryModel) :
+    try:
+        url = request.url
+        model = request.model
+        if not is_valid_url(url):
+            raise handle_invalid_url()
+        if invalid_model(model):
+            raise handle_invalid_model()
+        s3_client = get_s3_client()
+        response = summarize(s3_client, url, model) if model else summarize(s3_client, url)
+        log = response.copy()  
+        log.pop('markdown', None)
+        log_id = log.get('id')  
+        if log_id:  # Check if the 'id' is available
+            redis_client_db0.set(log_id, str(log))
+        return {"markdown": response['markdown']}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        # raise handle_internal_server_error()
+        raise e
+    
+@app.post('/qa') 
+async def qa_pipeline(request: qaModel):
+    try:
+        url = request.url
+        model = request.model
+        prompt = request.prompt
+        if not is_valid_url(url):
+            raise handle_invalid_url()
+        if invalid_model(model):
+            raise handle_invalid_model()
+        if invalid_prompt(prompt):
+            raise handle_invalid_prompt()
+        s3_client = get_s3_client()
+        response = qa(s3_client, url, prompt, model) if model else qa(s3_client, url, prompt)
+                # Create a log dictionary (clone the response and remove markdown)
+        log = response.copy()  
+        log.pop('markdown', None)
+        log_id = log.get('id')  
+        if log_id:  # Check if the 'id' is available
+            redis_client_db1.set(log_id, str(log))
+        return {"markdown": response['markdown']}
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise handle_internal_server_error()
+
         
 @app.get('/protected/cleanup')
 async def cleanup(secret: str):
@@ -235,4 +302,23 @@ async def cleanup(secret: str):
         raise handle_internal_server_error()
 
 
+@app.get("/get_all_db0")
+async def get_all_keys_db0():
+    try:
+        keys = redis_client_db0.keys('*')  # Get all keys in DB 0
+        if not keys:
+            return {"message": "No keys found in DB 0."}
+        return {"keys": keys}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/get_all_db1")
+async def get_all_keys_db1():
+    try:
+        keys = redis_client_db1.keys('*')  # Get all keys in DB 1
+        if not keys:
+            return {"message": "No keys found in DB 1."}
+        return {"keys": keys}
+    except Exception as e:
+        return {"error": str(e)}
 

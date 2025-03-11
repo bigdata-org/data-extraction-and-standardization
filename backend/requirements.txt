@@ -22,6 +22,7 @@ mdit_plain
 boto3
 pandas
 litellm
+redis
 
 
 
