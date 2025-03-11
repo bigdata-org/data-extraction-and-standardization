@@ -6,12 +6,21 @@ from utils.docling.core import PDF2MD as docling_PDF2MD
 from utils.firecrawl.core import get_firecrawl_client, scraper
 from utils.azure.document_intelligence import get_doc_int_client, extracter as docint_extracter
 from utils.haystack.pipeline import summarize, qa
+from utils.snowflake.core import sf_litellm_read, sf_litellm_write
 from utils.helper import *
 from pydantic import BaseModel
 from typing import List
 from io import BytesIO
 from  dotenv import load_dotenv
 import redis
+import logging
+
+# Set up logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 app = FastAPI()
@@ -46,13 +55,13 @@ class TextSummaryModel(BaseModel):
 class qaModel(BaseModel):
     url: str
     model: str
-    prompt: str    
+    prompt: str
     
 # Redis Client for Database 0
 redis_client_db0 = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
-# Redis Client for Database 1
-redis_client_db1 = redis.StrictRedis(host='localhost', port=6379, db=1, decode_responses=True)
+# # Redis Client for Database 1
+# redis_client_db1 = redis.StrictRedis(host='localhost', port=6379, db=1, decode_responses=True)
                   
 
 @app.get('/')
@@ -242,19 +251,40 @@ async def bs_scrape(request: UrlModel) -> CsvImageUrlMdModel:
 async def text_summarization(request: TextSummaryModel) :
     try:
         url = request.url
-        model = request.model
+        input_model = request.model
+        model_mapper = {
+            "openai/gpt-4o": "gpt-4o-2024-08-06",
+            "openai/gpt-3.5-turbo": "gpt-3.5-turbo-0125",
+            "openai/gpt-4": "gpt-4-0613",
+            "openai/gpt-4o-mini": "gpt-4o-mini-2024-07-18",
+            "gemini/gemini-1.5-pro": "gemini/gemini-1.5-pro",
+            "gemini/gemini-2.0-flash-lite": "gemini/gemini-2.0-flash-lite"
+        }
+        model = model_mapper[input_model]
         if not is_valid_url(url):
             raise handle_invalid_url()
         if invalid_model(model):
             raise handle_invalid_model()
-        s3_client = get_s3_client()
-        response = summarize(s3_client, url, model) if model else summarize(s3_client, url)
-        log = response.copy()  
-        log.pop('markdown', None)
-        log_id = log.get('id')  
-        if log_id:  # Check if the 'id' is available
-            redis_client_db0.set(log_id, str(log))
-        return {"markdown": response['markdown']}
+        # Check if the URL:model pair exists in Redis db0
+        redis_key = f"url:{url}:model:{model}"
+        redis_value = redis_client_db0.get(redis_key)
+
+        if redis_value:
+            # If the URL:model pair exists in Redis, fetch the markdown from Snowflake
+            markdown = sf_litellm_read(url, model, type="summarize")
+            logger.info(f"Found cached result for URL: {url} with model: {model} in Redis")
+        else:
+            # If it doesn't exist in Redis, perform summarization
+            s3_client = get_s3_client()
+            response = summarize(s3_client, url, model)
+            response['type'] = 'summarize'
+            response['source'] = url
+            sf_litellm_write(response)
+            redis_client_db0.set(redis_key, 1)
+            markdown = response['markdown']
+            logger.info(f"Returning summarized markdown for URL: {url}")
+
+        return {"markdown": markdown}
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -276,11 +306,9 @@ async def qa_pipeline(request: qaModel):
         s3_client = get_s3_client()
         response = qa(s3_client, url, prompt, model) if model else qa(s3_client, url, prompt)
                 # Create a log dictionary (clone the response and remove markdown)
-        log = response.copy()  
-        log.pop('markdown', None)
-        log_id = log.get('id')  
-        if log_id:  # Check if the 'id' is available
-            redis_client_db1.set(log_id, str(log))
+        response['mode'] = 'qa'
+        response['source'] = url
+        sf_litellm_write(response)
         return {"markdown": response['markdown']}
     except HTTPException as e:
         raise e
@@ -311,14 +339,3 @@ async def get_all_keys_db0():
         return {"keys": keys}
     except Exception as e:
         return {"error": str(e)}
-
-@app.get("/get_all_db1")
-async def get_all_keys_db1():
-    try:
-        keys = redis_client_db1.keys('*')  # Get all keys in DB 1
-        if not keys:
-            return {"message": "No keys found in DB 1."}
-        return {"keys": keys}
-    except Exception as e:
-        return {"error": str(e)}
-
