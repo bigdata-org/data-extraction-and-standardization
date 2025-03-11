@@ -19,7 +19,6 @@ python-multipart
 haystack-ai
 markdown-it-py 
 mdit_plain
-python-dotenv
 boto3
 pandas
 litellm
