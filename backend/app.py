@@ -279,6 +279,7 @@ async def text_summarization(request: TextSummaryModel) :
             response = summarize(s3_client, url, model)
             response['type'] = 'summarize'
             response['source'] = url
+            response['model'] = model
             sf_litellm_write(response)
             redis_client_db0.set(redis_key, 1)
             markdown = response['markdown']

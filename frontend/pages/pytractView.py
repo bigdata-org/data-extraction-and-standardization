@@ -1,33 +1,16 @@
 import streamlit as st
 import requests
 import pandas as pd
+from utils.helper import *
 
-st.title('Pytract-PDF Analyzer')
+st.title('Pytract-PDF Viewer')
 st.markdown('---')
 
+if 'pdf_data' not in st.session_state:
+    load_pdfs()
+df = st.session_state.get('pdf_data', pd.DataFrame()).copy()
+
 st.subheader("Existing PDFs")  
-# api_url = "http://52.4.147.70:8000"
-api_url = "http://localhost:8000"
-list_object_endpoint = "/objects"
-results_docint_endpoint = "/results/doc-int"
-results_oss_endpoint = "/results/opensource"
-results_docling_endpoint = "/results/docling"
-df= pd.DataFrame()
-try:
-    obj_res = requests.get(api_url+list_object_endpoint)
-    if obj_res.status_code==200:
-        files = obj_res.json()
-        df = pd.DataFrame(files)
-        df.rename(columns={
-            'file_name': 'File Name',
-            'file_size': 'Size (KB)',
-            'last_modified': 'Last Modified',
-            'url': 'Public Endpoint'
-        }, inplace=True)
-    else:
-        st.error('We’re unable to retrieve the list of PDFs at the moment. Please try again later or contact support if the issue persists')
-except:
-    st.error('Server is down..')
 
 if df.empty:
     st.warning('No PDF files available to display. Please upload a file or check back later.')
@@ -50,7 +33,7 @@ else:
         if selected_rows.shape[0]==1:
             file_name = selected_rows.iloc[0]["File Name"].strip('.pdf')
             endpoint = results_oss_endpoint if tool_option == "Open Source (PyPDF, pdfplumber)" else results_docint_endpoint        
-            response = requests.get(api_url+endpoint+f'/{file_name}')
+            response = requests.get(base_url+endpoint+f'/{file_name}')
             if response.status_code==200:
                 result = response.json()
                 img_df = pd.DataFrame(result['images'])
@@ -80,7 +63,7 @@ else:
             else:
                 st.error("Object Not Found")
             with st.expander('Markdown'):
-                md_response = requests.get(api_url+results_docling_endpoint+f'/{file_name}')
+                md_response = requests.get(base_url+results_docling_endpoint+f'/{file_name}')
                 if md_response.status_code==200:
                     md_result = md_response.json()
                     st.subheader('Markdown')
