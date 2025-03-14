@@ -23,7 +23,7 @@ boto3
 pandas
 litellm
 redis
-
+snowflake-connector-python
 
 
 
